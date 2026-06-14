@@ -10,6 +10,7 @@
     "deploy:cloudflare": "wrangler deploy"
   },
   "devDependencies": {
+    "netlify-cli": "^23.0.0",
     "wrangler": "^4.0.0"
   },
   "engines": {
