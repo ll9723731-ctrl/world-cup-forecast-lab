@@ -2,4 +2,8 @@ node_modules/
 .tools/
 .env
 preview*.png
+public-site.png
 npm-debug.log*
+
+# Local Netlify folder
+.netlify
