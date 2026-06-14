@@ -3,6 +3,7 @@ node_modules/
 .env
 preview*.png
 public-site.png
+odds-preview.png
 npm-debug.log*
 
 # Local Netlify folder

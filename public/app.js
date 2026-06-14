@@ -145,7 +145,8 @@ function calculateModel() {
     home, away, venue, difference, homeAdjusted, awayAdjusted, homeLambda, awayLambda,
     homeWin: blended.homeWin, draw: blended.draw, awayWin: blended.awayWin,
     base, effectiveMarketWeight, over25: over25 / matrixTotal, btts: btts / matrixTotal,
-    scores: scores.slice(0, 4), homeForm, awayForm, homeAvailability, awayAvailability
+    scores: scores.slice(0, 4), scoreMatrix: scores,
+    homeForm, awayForm, homeAvailability, awayAvailability
   };
 }
 
@@ -155,6 +156,90 @@ function percent(value) {
 
 function signed(value) {
   return value > 0 ? `+${value}` : `${value}`;
+}
+
+function decimalOdds(probability) {
+  if (!probability || probability <= 0) return "--";
+  return (1 / probability).toFixed(2);
+}
+
+function asianFairOdds(win, push, lose) {
+  if (win <= 0) return "--";
+  return (1 + lose / win).toFixed(2);
+}
+
+function formatLine(value) {
+  const number = Number(value);
+  return number > 0 ? `+${number}` : `${number}`;
+}
+
+function calculateHandicap(matrix, line) {
+  let homeWin = 0;
+  let awayWin = 0;
+  let push = 0;
+  matrix.forEach((score) => {
+    const adjusted = score.h + line - score.a;
+    if (adjusted > 0) homeWin += score.probability;
+    else if (adjusted < 0) awayWin += score.probability;
+    else push += score.probability;
+  });
+  return { homeWin, awayWin, push };
+}
+
+function calculateTotal(matrix, line) {
+  let over = 0;
+  let under = 0;
+  matrix.forEach((score) => {
+    if (score.h + score.a > line) over += score.probability;
+    else under += score.probability;
+  });
+  return { over, under };
+}
+
+function pickMainHandicap(result) {
+  const lines = [-2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5];
+  return lines.reduce((best, line) => {
+    const outcome = calculateHandicap(result.scoreMatrix, line);
+    const settled = outcome.homeWin + outcome.awayWin;
+    const homeShare = settled ? outcome.homeWin / settled : 0.5;
+    return Math.abs(homeShare - 0.5) < best.distance
+      ? { line, distance: Math.abs(homeShare - 0.5) }
+      : best;
+  }, { line: 0, distance: Infinity }).line;
+}
+
+function renderOdds(result) {
+  const { home, away } = result;
+  $("#odds-home-name").textContent = home.name;
+  $("#odds-away-name").textContent = away.name;
+  $("#odds-home-price").textContent = decimalOdds(result.homeWin);
+  $("#odds-draw-price").textContent = decimalOdds(result.draw);
+  $("#odds-away-price").textContent = decimalOdds(result.awayWin);
+  $("#odds-home-prob").textContent = percent(result.homeWin);
+  $("#odds-draw-prob").textContent = percent(result.draw);
+  $("#odds-away-prob").textContent = percent(result.awayWin);
+  $("#one-x-two-source").textContent = marketData?.probabilities && $("#market-blend").checked
+    ? "模型 + Polymarket"
+    : "Dixon–Coles 模型";
+
+  const handicapLine = Number($("#handicap-line").value);
+  const handicap = calculateHandicap(result.scoreMatrix, handicapLine);
+  $("#handicap-home-label").textContent = `${home.name} ${formatLine(handicapLine)}`;
+  $("#handicap-away-label").textContent = `${away.name} ${formatLine(-handicapLine)}`;
+  $("#handicap-home-price").textContent = asianFairOdds(handicap.homeWin, handicap.push, handicap.awayWin);
+  $("#handicap-away-price").textContent = asianFairOdds(handicap.awayWin, handicap.push, handicap.homeWin);
+  $("#handicap-home-prob").textContent = `${percent(handicap.homeWin)} 赢盘`;
+  $("#handicap-away-prob").textContent = `${percent(handicap.awayWin)} 赢盘`;
+  $("#handicap-push").textContent = handicap.push > 0.001 ? `走盘概率 ${percent(handicap.push)}` : "半球盘无走盘";
+
+  const totalLine = Number($("#total-line").value);
+  const total = calculateTotal(result.scoreMatrix, totalLine);
+  $("#over-label").textContent = `大 ${totalLine}`;
+  $("#under-label").textContent = `小 ${totalLine}`;
+  $("#over-price").textContent = decimalOdds(total.over);
+  $("#under-price").textContent = decimalOdds(total.under);
+  $("#over-prob").textContent = percent(total.over);
+  $("#under-prob").textContent = percent(total.under);
 }
 
 function setTeamVisuals(prefix, team) {
@@ -204,6 +289,7 @@ function render() {
   $("#blend-home").textContent = percent(result.homeWin);
   $("#blend-draw").textContent = percent(result.draw);
   $("#blend-away").textContent = percent(result.awayWin);
+  renderOdds(result);
 
   const highest = Math.max(result.homeWin, result.draw, result.awayWin);
   $("#confidence-label").textContent = highest >= 0.66 ? "较高置信度" : highest >= 0.48 ? "中等置信度" : "低置信度";
@@ -279,9 +365,9 @@ async function refreshLiveData() {
     $("#market-odds").hidden = false;
     $("#market-home-name").textContent = home.name;
     $("#market-away-name").textContent = away.name;
-    $("#market-home").textContent = percent(received.probabilities.home);
-    $("#market-draw").textContent = percent(received.probabilities.draw);
-    $("#market-away").textContent = percent(received.probabilities.away);
+    $("#market-home").textContent = `${percent(received.probabilities.home)} · ${decimalOdds(received.probabilities.home)}`;
+    $("#market-draw").textContent = `${percent(received.probabilities.draw)} · ${decimalOdds(received.probabilities.draw)}`;
+    $("#market-away").textContent = `${percent(received.probabilities.away)} · ${decimalOdds(received.probabilities.away)}`;
     $("#market-meta").textContent = `${received.title} · 总成交量 ${formatMoney(received.volume)}${received.closed ? " · 市场已关闭，仅展示" : ""}`;
     $("#market-updated").textContent = `更新 ${formatTime(received.updatedAt)}`;
     $("#market-link").href = received.url;
@@ -322,13 +408,22 @@ function updateOutputs() {
   $("#away-availability-value").textContent = `${$("#away-availability").value}%`;
 }
 
-[homeSelect, awaySelect].forEach((select) => select.addEventListener("change", () => { render(); refreshLiveData(); }));
+[homeSelect, awaySelect].forEach((select) => select.addEventListener("change", () => {
+  $("#handicap-line").value = String(pickMainHandicap(calculateModel()));
+  render();
+  refreshLiveData();
+}));
 document.querySelectorAll('input[name="venue"]').forEach((input) => input.addEventListener("change", render));
 document.querySelectorAll('input[type="range"]').forEach((input) => input.addEventListener("input", () => { updateOutputs(); render(); }));
 $("#market-blend").addEventListener("change", render);
 $("#market-weight").addEventListener("input", () => { $("#market-weight-value").textContent = `${$("#market-weight").value}%`; render(); });
+$("#handicap-line").addEventListener("change", render);
+$("#total-line").addEventListener("change", render);
 $("#predict-button").addEventListener("click", refreshLiveData);
 
 updateOutputs();
 render();
+$("#handicap-line").value = String(pickMainHandicap(calculateModel()));
+render();
 refreshLiveData();
+setInterval(refreshLiveData, 3 * 60 * 1000);

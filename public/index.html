@@ -134,6 +134,70 @@
         <div class="comparison-row final-row"><strong>混合模型</strong><span id="blend-home">--</span><span id="blend-draw">--</span><span id="blend-away">--</span></div>
       </div>
 
+      <div class="odds-center">
+        <div class="section-title">
+          <div>
+            <h3>盘口与公平赔率</h3>
+            <small>随球队、状态、阵容和市场数据实时更新</small>
+          </div>
+          <span>十进制赔率</span>
+        </div>
+        <div class="odds-grid">
+          <article class="odds-panel">
+            <div class="odds-panel-head">
+              <div><strong>胜平负</strong><small id="one-x-two-source">混合模型</small></div>
+              <span>1X2</span>
+            </div>
+            <div class="odds-three">
+              <div><span id="odds-home-name">主胜</span><strong id="odds-home-price">--</strong><small id="odds-home-prob">--</small></div>
+              <div><span>平局</span><strong id="odds-draw-price">--</strong><small id="odds-draw-prob">--</small></div>
+              <div><span id="odds-away-name">客胜</span><strong id="odds-away-price">--</strong><small id="odds-away-prob">--</small></div>
+            </div>
+          </article>
+
+          <article class="odds-panel">
+            <div class="odds-panel-head">
+              <div><strong>亚洲让球</strong><small>模型公平盘</small></div>
+              <select id="handicap-line" aria-label="选择让球盘口">
+                <option value="-2.5">A -2.5</option>
+                <option value="-2">A -2</option>
+                <option value="-1.5">A -1.5</option>
+                <option value="-1">A -1</option>
+                <option value="-0.5">A -0.5</option>
+                <option value="0">A 0</option>
+                <option value="0.5">A +0.5</option>
+                <option value="1">A +1</option>
+                <option value="1.5">A +1.5</option>
+                <option value="2">A +2</option>
+                <option value="2.5">A +2.5</option>
+              </select>
+            </div>
+            <div class="odds-two">
+              <div><span id="handicap-home-label">A -0.5</span><strong id="handicap-home-price">--</strong><small id="handicap-home-prob">--</small></div>
+              <div><span id="handicap-away-label">B +0.5</span><strong id="handicap-away-price">--</strong><small id="handicap-away-prob">--</small></div>
+            </div>
+            <p class="push-note" id="handicap-push"></p>
+          </article>
+
+          <article class="odds-panel">
+            <div class="odds-panel-head">
+              <div><strong>进球大小</strong><small>模型公平盘</small></div>
+              <select id="total-line" aria-label="选择大小球盘口">
+                <option value="1.5">1.5</option>
+                <option value="2.5" selected>2.5</option>
+                <option value="3.5">3.5</option>
+                <option value="4.5">4.5</option>
+              </select>
+            </div>
+            <div class="odds-two">
+              <div><span id="over-label">大 2.5</span><strong id="over-price">--</strong><small id="over-prob">--</small></div>
+              <div><span id="under-label">小 2.5</span><strong id="under-price">--</strong><small id="under-prob">--</small></div>
+            </div>
+          </article>
+        </div>
+        <p class="odds-disclaimer">公平赔率未包含博彩公司的利润率。Polymarket暂未提供对应让球或大小球时，页面使用比分模型计算，不冒充市场实盘。</p>
+      </div>
+
       <div class="analysis-grid">
         <article class="score-card">
           <div class="section-title"><h3>最可能比分</h3><span>低比分已修正</span></div>

@@ -338,6 +338,58 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .final-row strong { padding-left: 8px; color: white; }
 .final-row span:last-child { padding-right: 8px; }
 
+.odds-center {
+  margin-top: 20px;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--red);
+  background: white;
+}
+.odds-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.odds-panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.odds-panel-head {
+  min-height: 62px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.odds-panel-head strong, .odds-panel-head small { display: block; }
+.odds-panel-head strong { font-size: 13px; }
+.odds-panel-head small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.odds-panel-head > span { color: var(--green); font-size: 10px; font-weight: 800; }
+.odds-panel-head select {
+  width: auto;
+  min-width: 82px;
+  padding: 7px 28px 7px 9px;
+  font-size: 11px;
+}
+.odds-three, .odds-two { display: grid; }
+.odds-three { grid-template-columns: repeat(3, 1fr); }
+.odds-two { grid-template-columns: repeat(2, 1fr); }
+.odds-three > div, .odds-two > div {
+  padding: 15px 8px;
+  border-right: 1px solid var(--line);
+  text-align: center;
+}
+.odds-three > div:last-child, .odds-two > div:last-child { border-right: 0; }
+.odds-three span, .odds-two span { display: block; color: var(--muted); font-size: 10px; }
+.odds-three strong, .odds-two strong { display: block; margin: 7px 0 4px; font-size: 20px; font-variant-numeric: tabular-nums; }
+.odds-three small, .odds-two small { display: block; color: var(--green); font-size: 10px; font-weight: 700; }
+.push-note { min-height: 17px; margin: 0; padding: 6px 12px; color: var(--muted); font-size: 9px; text-align: center; }
+.odds-disclaimer { margin: 14px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+
 .analysis-grid {
   margin-top: 20px;
   display: grid;
@@ -425,6 +477,7 @@ footer {
   .analysis-grid { grid-template-columns: 1fr 1fr; }
   .explanation-card { grid-column: 1 / -1; }
   .live-grid { grid-template-columns: 1fr; }
+  .odds-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -451,5 +504,7 @@ footer {
   .result-badges { flex-direction: column; align-items: flex-end; }
   .model-comparison { padding: 18px 12px; overflow-x: auto; }
   .comparison-head, .comparison-row { min-width: 430px; }
+  .odds-center { padding: 18px 12px; }
+  .odds-grid { grid-template-columns: 1fr; }
   .pitch-lines { display: none; }
 }
