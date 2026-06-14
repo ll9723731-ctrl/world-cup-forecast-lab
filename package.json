@@ -1,0 +1,14 @@
+{
+  "name": "world-cup-forecast-lab",
+  "version": "0.3.0",
+  "private": true,
+  "description": "World Cup match forecast using Elo, Dixon-Coles and Polymarket data.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check app.js && node --check server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

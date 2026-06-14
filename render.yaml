@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: world-cup-forecast-lab
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeployTrigger: commit

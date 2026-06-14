@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="融合动态 Elo、Dixon-Coles 与 Polymarket 盘口的世界杯比赛预测工具">
+  <title>世界杯预测实验室</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="世界杯预测实验室首页">
+      <span class="brand-ball" aria-hidden="true">⚽</span>
+      <span>
+        <strong>世界杯预测实验室</strong>
+        <small>ELO · DIXON-COLES · MARKET</small>
+      </span>
+    </a>
+    <div class="model-status"><span class="status-dot"></span>实时混合模型</div>
+  </header>
+
+  <main>
+    <section class="match-workbench" aria-labelledby="page-title">
+      <div class="pitch-lines" aria-hidden="true"></div>
+      <div class="intro">
+        <p class="eyebrow">WORLD CUP 2026 · 48 TEAMS</p>
+        <h1 id="page-title">比赛预测中心</h1>
+        <p>比较球队实力、阵容和市场共识，给出90分钟胜平负与比分概率。</p>
+      </div>
+
+      <div class="team-picker">
+        <article class="team-panel home-panel">
+          <label for="home-team">球队 A</label>
+          <div class="team-identity">
+            <img class="flag-image" id="home-flag" alt="">
+            <div>
+              <strong id="home-display-name">德国</strong>
+              <span id="home-group">E组</span>
+            </div>
+          </div>
+          <select id="home-team" aria-label="选择球队A"></select>
+          <div class="rating-row"><span>基础 Elo</span><strong id="home-elo">1935</strong></div>
+        </article>
+
+        <div class="versus" aria-hidden="true"><span>VS</span></div>
+
+        <article class="team-panel away-panel">
+          <label for="away-team">球队 B</label>
+          <div class="team-identity">
+            <img class="flag-image" id="away-flag" alt="">
+            <div>
+              <strong id="away-display-name">巴西</strong>
+              <span id="away-group">C组</span>
+            </div>
+          </div>
+          <select id="away-team" aria-label="选择球队B"></select>
+          <div class="rating-row"><span>基础 Elo</span><strong id="away-elo">1990</strong></div>
+        </article>
+      </div>
+
+      <div class="controls">
+        <fieldset>
+          <legend>比赛场地</legend>
+          <div class="segmented">
+            <label><input type="radio" name="venue" value="neutral" checked><span>中立场</span></label>
+            <label><input type="radio" name="venue" value="home"><span>A 主场</span></label>
+            <label><input type="radio" name="venue" value="away"><span>B 主场</span></label>
+          </div>
+        </fieldset>
+        <div class="adjustment">
+          <label for="home-form">A 近期状态 <output id="home-form-value">0</output></label>
+          <input id="home-form" type="range" min="-100" max="100" step="10" value="0">
+        </div>
+        <div class="adjustment">
+          <label for="away-form">B 近期状态 <output id="away-form-value">0</output></label>
+          <input id="away-form" type="range" min="-100" max="100" step="10" value="0">
+        </div>
+        <div class="adjustment">
+          <label for="home-availability">A 阵容完整度 <output id="home-availability-value">100%</output></label>
+          <input id="home-availability" type="range" min="70" max="100" step="1" value="100">
+        </div>
+        <div class="adjustment">
+          <label for="away-availability">B 阵容完整度 <output id="away-availability-value">100%</output></label>
+          <input id="away-availability" type="range" min="70" max="100" step="1" value="100">
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="predict-button" id="predict-button" type="button"><span aria-hidden="true">↻</span>刷新实时数据</button>
+        <label class="market-toggle"><input id="market-blend" type="checkbox" checked><span>融合 Polymarket</span></label>
+        <label class="market-weight" for="market-weight">
+          市场权重
+          <input id="market-weight" type="range" min="0" max="60" step="5" value="35">
+          <output id="market-weight-value">35%</output>
+        </label>
+      </div>
+    </section>
+
+    <section class="results" aria-live="polite">
+      <div class="result-heading">
+        <div><p class="eyebrow">HYBRID MODEL OUTPUT</p><h2>预测结果</h2></div>
+        <div class="result-badges">
+          <span class="model-badge">Dixon–Coles</span>
+          <span id="confidence-label" class="confidence">中等置信度</span>
+        </div>
+      </div>
+
+      <div class="probability-grid">
+        <article class="probability home-win">
+          <span id="home-result-name">德国</span>
+          <strong id="home-probability">35%</strong>
+          <div class="probability-track"><i id="home-bar"></i></div>
+          <small>获胜</small>
+        </article>
+        <article class="probability draw">
+          <span>平局</span>
+          <strong id="draw-probability">27%</strong>
+          <div class="probability-track"><i id="draw-bar"></i></div>
+          <small>90 分钟</small>
+        </article>
+        <article class="probability away-win">
+          <span id="away-result-name">巴西</span>
+          <strong id="away-probability">38%</strong>
+          <div class="probability-track"><i id="away-bar"></i></div>
+          <small>获胜</small>
+        </article>
+      </div>
+
+      <div class="model-comparison">
+        <div class="section-title"><h3>模型拆分</h3><span>数据模型 / 市场 / 融合结果</span></div>
+        <div class="comparison-head"><span>来源</span><span>主胜</span><span>平局</span><span>客胜</span></div>
+        <div class="comparison-row"><strong>Elo + Dixon–Coles</strong><span id="base-home">--</span><span id="base-draw">--</span><span id="base-away">--</span></div>
+        <div class="comparison-row"><strong>Polymarket</strong><span id="compare-market-home">--</span><span id="compare-market-draw">--</span><span id="compare-market-away">--</span></div>
+        <div class="comparison-row final-row"><strong>混合模型</strong><span id="blend-home">--</span><span id="blend-draw">--</span><span id="blend-away">--</span></div>
+      </div>
+
+      <div class="analysis-grid">
+        <article class="score-card">
+          <div class="section-title"><h3>最可能比分</h3><span>低比分已修正</span></div>
+          <div id="score-list" class="score-list"></div>
+        </article>
+        <article class="metrics-card">
+          <div class="section-title"><h3>进球指标</h3><span>xG 估计</span></div>
+          <div class="metric"><span id="home-xg-name">德国</span><strong id="home-xg">1.34</strong></div>
+          <div class="metric"><span id="away-xg-name">巴西</span><strong id="away-xg">1.42</strong></div>
+          <div class="metric"><span>双方进球</span><strong id="btts">55%</strong></div>
+          <div class="metric"><span>大于 2.5 球</span><strong id="over25">52%</strong></div>
+        </article>
+        <article class="explanation-card">
+          <div class="section-title"><h3>模型解读</h3><span>非投注建议</span></div>
+          <p id="explanation"></p>
+          <div class="factor-list" id="factor-list"></div>
+        </article>
+      </div>
+
+      <div class="live-grid">
+        <article class="market-card">
+          <div class="section-title">
+            <div><h3>Polymarket 盘口</h3><small id="market-updated">等待刷新</small></div>
+            <a id="market-link" href="https://polymarket.com/sports" target="_blank" rel="noreferrer">查看市场 ↗</a>
+          </div>
+          <div id="market-status" class="data-status">正在查找精确对阵市场...</div>
+          <div id="market-odds" class="market-odds" hidden>
+            <div><span id="market-home-name">主胜</span><strong id="market-home">--</strong></div>
+            <div><span>平局</span><strong id="market-draw">--</strong></div>
+            <div><span id="market-away-name">客胜</span><strong id="market-away">--</strong></div>
+          </div>
+          <div id="market-meta" class="market-meta"></div>
+        </article>
+        <article class="news-card">
+          <div class="section-title">
+            <div><h3>最新球队信息</h3><small id="news-updated">等待刷新</small></div>
+            <span>近 7 日新闻</span>
+          </div>
+          <div id="news-status" class="data-status">正在收集近期消息...</div>
+          <div id="news-list" class="news-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="methodology">
+      <div><p class="eyebrow">MODEL ARCHITECTURE</p><h2>混合预测方法</h2></div>
+      <div class="method-steps">
+        <article><strong>01</strong><h3>动态 Elo</h3><p>以国家队长期实力为先验，再加入场地、近期状态与阵容修正。</p></article>
+        <article><strong>02</strong><h3>Dixon–Coles</h3><p>建立比分泊松矩阵，并修正0:0、1:0、0:1、1:1的相关性。</p></article>
+        <article><strong>03</strong><h3>市场对数融合</h3><p>按成交量调节Polymarket权重，以几何方式融合两组概率。</p></article>
+      </div>
+      <p class="disclaimer">模型表达的是概率，不会预知红牌、临场伤病或偶然事件。市场价格可能受流动性、价差与情绪影响；新闻标题也需要人工核实。</p>
+    </section>
+  </main>
+
+  <footer><span>World Cup Forecast Lab</span><span>模型版本 0.3 · 48支球队</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>
