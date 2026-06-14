@@ -1,28 +1,8 @@
-const http = require("node:http");
-const fs = require("node:fs");
-const path = require("node:path");
-
-const PORT = Number(process.env.PORT || 4173);
-const ROOT = path.join(__dirname, "public");
-const CACHE_TTL = 3 * 60 * 1000;
-const cache = new Map();
-
-const mimeTypes = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-  ".ico": "image/x-icon"
-};
-
-function json(res, status, value) {
-  res.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store"
+function json(value, status = 200) {
+  return Response.json(value, {
+    status,
+    headers: { "Cache-Control": "public, max-age=60" }
   });
-  res.end(JSON.stringify(value));
 }
 
 function clean(value) {
@@ -54,37 +34,21 @@ function parseArray(value) {
 }
 
 function yesPrice(market) {
-  const outcomes = parseArray(market.outcomes);
-  const prices = parseArray(market.outcomePrices).map(Number);
+  const outcomes = parseArray(market?.outcomes);
+  const prices = parseArray(market?.outcomePrices).map(Number);
   const index = outcomes.findIndex((outcome) => clean(outcome) === "yes");
   return index >= 0 && Number.isFinite(prices[index]) ? prices[index] : null;
 }
 
-function cacheGet(key) {
-  const item = cache.get(key);
-  if (item && Date.now() - item.time < CACHE_TTL) return item.value;
-  return null;
-}
-
-function cacheSet(key, value) {
-  cache.set(key, { time: Date.now(), value });
-  return value;
-}
-
 async function fetchJson(url) {
   const response = await fetch(url, {
-    headers: { "User-Agent": "WorldCupForecastLab/0.2" },
-    signal: AbortSignal.timeout(12000)
+    headers: { "User-Agent": "WorldCupForecastLab/0.4" }
   });
   if (!response.ok) throw new Error(`Upstream HTTP ${response.status}`);
   return response.json();
 }
 
 async function getPolymarket(home, away) {
-  const key = `market:${home}:${away}`;
-  const cached = cacheGet(key);
-  if (cached) return cached;
-
   const params = new URLSearchParams({
     q: `${home} ${away}`,
     limit_per_type: "12",
@@ -96,35 +60,28 @@ async function getPolymarket(home, away) {
     mentions(event.title, home) && mentions(event.title, away)
   );
   const event = candidates.find((item) => !item.closed) || candidates[0];
-  if (!event) return cacheSet(key, { found: false, updatedAt: new Date().toISOString() });
+  if (!event) return { found: false, updatedAt: new Date().toISOString() };
 
   const moneylines = (event.markets || []).filter((market) => market.sportsMarketType === "moneyline");
   const drawMarket = moneylines.find((market) => clean(market.question).includes("draw"));
   const homeMarket = moneylines.find((market) => mentions(market.question, home) && !clean(market.question).includes("draw"));
   const awayMarket = moneylines.find((market) => mentions(market.question, away) && !clean(market.question).includes("draw"));
-  const raw = [yesPrice(homeMarket || {}), yesPrice(drawMarket || {}), yesPrice(awayMarket || {})];
-  if (raw.some((value) => value === null)) {
-    return cacheSet(key, { found: false, updatedAt: new Date().toISOString() });
-  }
+  const raw = [yesPrice(homeMarket), yesPrice(drawMarket), yesPrice(awayMarket)];
+  if (raw.some((value) => value === null)) return { found: false, updatedAt: new Date().toISOString() };
 
   const total = raw.reduce((sum, value) => sum + value, 0);
-  if (total <= 0) return cacheSet(key, { found: false, updatedAt: new Date().toISOString() });
+  if (total <= 0) return { found: false, updatedAt: new Date().toISOString() };
   const closed = Boolean(event.closed || [homeMarket, drawMarket, awayMarket].some((market) => market?.closed));
-  const result = {
+  return {
     found: true,
     title: event.title,
     slug: event.slug,
     url: `https://polymarket.com/event/${event.slug}`,
     closed,
-    probabilities: {
-      home: raw[0] / total,
-      draw: raw[1] / total,
-      away: raw[2] / total
-    },
+    probabilities: { home: raw[0] / total, draw: raw[1] / total, away: raw[2] / total },
     volume: [homeMarket, drawMarket, awayMarket].reduce((sum, market) => sum + Number(market?.volumeNum || 0), 0),
     updatedAt: new Date().toISOString()
   };
-  return cacheSet(key, result);
 }
 
 function decodeXml(value) {
@@ -143,14 +100,10 @@ function tag(block, name) {
 }
 
 async function getNews(home, away) {
-  const key = `news:${home}:${away}`;
-  const cached = cacheGet(key);
-  if (cached) return cached;
   const query = `"${home}" OR "${away}" World Cup football when:7d`;
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
   const response = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 WorldCupForecastLab/0.2" },
-    signal: AbortSignal.timeout(12000)
+    headers: { "User-Agent": "Mozilla/5.0 WorldCupForecastLab/0.4" }
   });
   if (!response.ok) throw new Error(`News HTTP ${response.status}`);
   const xml = await response.text();
@@ -164,52 +117,28 @@ async function getNews(home, away) {
       publishedAt: new Date(tag(block, "pubDate")).toISOString()
     };
   });
-  return cacheSet(key, { items, updatedAt: new Date().toISOString() });
+  return { items, updatedAt: new Date().toISOString() };
 }
 
-async function handleApi(req, res, url) {
+async function handleApi(url) {
   const home = url.searchParams.get("home");
   const away = url.searchParams.get("away");
   if (!home || !away || home.length > 40 || away.length > 40) {
-    return json(res, 400, { error: "Invalid teams" });
+    return json({ error: "Invalid teams" }, 400);
   }
   try {
-    if (url.pathname === "/api/polymarket") return json(res, 200, await getPolymarket(home, away));
-    if (url.pathname === "/api/news") return json(res, 200, await getNews(home, away));
-    return json(res, 404, { error: "Not found" });
+    if (url.pathname === "/api/polymarket") return json(await getPolymarket(home, away));
+    if (url.pathname === "/api/news") return json(await getNews(home, away));
+    return json({ error: "Not found" }, 404);
   } catch (error) {
-    return json(res, 502, { error: error.message });
+    return json({ error: error.message }, 502);
   }
 }
 
-function serveStatic(req, res, url) {
-  const requested = url.pathname === "/" ? "/index.html" : url.pathname;
-  const filePath = path.resolve(ROOT, `.${decodeURIComponent(requested)}`);
-  if (!filePath.startsWith(ROOT)) {
-    res.writeHead(403);
-    return res.end("Forbidden");
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/")) return handleApi(url);
+    return env.ASSETS.fetch(request);
   }
-  fs.stat(filePath, (statError, stats) => {
-    if (statError || !stats.isFile()) {
-      res.writeHead(404);
-      return res.end("Not found");
-    }
-    res.writeHead(200, {
-      "Content-Type": mimeTypes[path.extname(filePath)] || "application/octet-stream",
-      "Cache-Control": "no-cache"
-    });
-    fs.createReadStream(filePath).pipe(res);
-  });
-}
-
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-  if (url.pathname.startsWith("/api/")) return handleApi(req, res, url);
-  return serveStatic(req, res, url);
-});
-
-const HOST = process.env.HOST || "0.0.0.0";
-
-server.listen(PORT, HOST, () => {
-  console.log(`World Cup Forecast Lab listening on ${HOST}:${PORT}`);
-});
+};

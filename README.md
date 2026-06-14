@@ -10,11 +10,23 @@
 node server.js
 ```
 
-浏览器打开 `http://127.0.0.1:4173`。实时功能必须通过本地服务访问，不能直接双击 `index.html`。
+浏览器打开 `http://127.0.0.1:4173`。实时功能必须通过本地服务访问，不能直接双击 `public/index.html`。
 
 ## 部署到 Render
 
 项目已经包含 `render.yaml`。将仓库推送到 GitHub 后，在 Render 选择 **New Blueprint Instance** 并连接仓库即可。服务会使用平台提供的 `PORT`，并监听 `0.0.0.0`。
+
+## 部署到 Cloudflare
+
+项目包含 `worker.mjs` 与 `wrangler.jsonc`，静态页面和两个实时 API 可以作为一个 Cloudflare Worker 部署。
+
+```powershell
+npm install
+npx wrangler login
+npm run deploy:cloudflare
+```
+
+Cloudflare Workers 免费计划适合个人访问量，不需要常驻服务器。
 
 ## 模型
 

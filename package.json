@@ -6,7 +6,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check app.js && node --check server.js"
+    "check": "node --check public/app.js && node --check server.js && node --check worker.mjs",
+    "deploy:cloudflare": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   },
   "engines": {
     "node": ">=20"
