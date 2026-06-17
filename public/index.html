@@ -19,7 +19,7 @@
         <a href="#data-board" class="active">资料</a>
         <a href="#prediction-board">预测</a>
         <a href="#odds-board">盘口</a>
-        <a href="#teams-board">队伍</a>
+        <a href="#model-board">模型</a>
         <a href="#review-board">复盘</a>
       </nav>
       <button class="theme-switch" id="theme-switch" type="button">
@@ -55,7 +55,7 @@
       <div class="zonal-stats">
         <article><strong>48</strong><span>参赛队伍</span></article>
         <article><strong>12</strong><span>小组分区</span></article>
-        <article><strong>3</strong><span>模型层</span></article>
+        <article><strong>5</strong><span>模型层</span></article>
         <article><strong>3m</strong><span>盘口刷新</span></article>
       </div>
 
@@ -163,6 +163,22 @@
         <div class="comparison-row"><strong>Elo + Dixon–Coles</strong><span id="base-home">--</span><span id="base-draw">--</span><span id="base-away">--</span></div>
         <div class="comparison-row"><strong>Polymarket</strong><span id="compare-market-home">--</span><span id="compare-market-draw">--</span><span id="compare-market-away">--</span></div>
         <div class="comparison-row final-row"><strong>混合模型</strong><span id="blend-home">--</span><span id="blend-draw">--</span><span id="blend-away">--</span></div>
+      </div>
+
+      <div class="model-lab" id="model-board">
+        <div class="section-title">
+          <div><h3>多模型共识</h3><small>把强弱、比分、盘口和市场分歧拆开看</small></div>
+          <span id="consensus-label">等待计算</span>
+        </div>
+        <div id="model-stack" class="model-stack"></div>
+        <article class="upset-card">
+          <div>
+            <span>爆冷雷达</span>
+            <strong id="upset-score">--</strong>
+          </div>
+          <p id="upset-text">等待球队选择和实时盘口。</p>
+          <div class="factor-list" id="upset-factors"></div>
+        </article>
       </div>
 
       <div class="odds-center" id="odds-board">
@@ -278,7 +294,9 @@
       <div class="method-steps">
         <article><strong>01</strong><h3>动态 Elo</h3><p>以国家队长期实力为先验，再加入场地、近期状态与阵容修正。</p></article>
         <article><strong>02</strong><h3>Dixon–Coles</h3><p>建立比分泊松矩阵，并修正0:0、1:0、0:1、1:1的相关性。</p></article>
-        <article><strong>03</strong><h3>市场对数融合</h3><p>按成交量调节Polymarket权重，以几何方式融合两组概率。</p></article>
+        <article><strong>03</strong><h3>纯 Elo 胜率</h3><p>只看修正后实力差，独立估计胜平负，用来防止比分模型过拟合。</p></article>
+        <article><strong>04</strong><h3>强弱代理模型</h3><p>把状态、阵容完整度和主客场修正拆成强弱指数，观察冷门窗口。</p></article>
+        <article><strong>05</strong><h3>市场对数融合</h3><p>按成交量调节Polymarket权重，以几何方式融合两组概率。</p></article>
       </div>
       <p class="disclaimer">模型表达的是概率，不会预知红牌、临场伤病或偶然事件。市场价格可能受流动性、价差与情绪影响；新闻标题也需要人工核实。</p>
     </section>
@@ -292,6 +310,19 @@
         <article><strong>方向</strong><span>记录胜平负是否命中，后续可接入自动赛果。</span></article>
         <article><strong>比分</strong><span>记录最可能比分、一球内接近和偏差原因。</span></article>
         <article><strong>盘口</strong><span>保留赛前盘口概率，便于赛后观察市场分歧。</span></article>
+      </div>
+      <div class="past-summary">
+        <div class="section-title">
+          <div><h3>前面比赛数据</h3><small>已录入赛果样本，用来校准爆冷和进球环境</small></div>
+          <span id="past-updated">赛果快照</span>
+        </div>
+        <div class="past-metrics">
+          <article><span>样本场次</span><strong id="past-games">--</strong></article>
+          <article><span>总进球</span><strong id="past-goals">--</strong></article>
+          <article><span>场均进球</span><strong id="past-avg-goals">--</strong></article>
+          <article><span>爆冷/强队失分</span><strong id="past-upsets">--</strong></article>
+        </div>
+        <div id="past-match-list" class="past-match-list"></div>
       </div>
     </section>
   </main>

@@ -13,6 +13,17 @@ const teams = [
   ["L","eng","英格兰","England","gb-eng",1985],["L","cro","克罗地亚","Croatia","hr",1870],["L","gha","加纳","Ghana","gh",1650],["L","pan","巴拿马","Panama","pa",1630]
 ].map(([group,id,name,en,flagCode,elo]) => ({ group,id,name,en,flagCode,elo }));
 
+const previousMatches = [
+  { date: "06-12", group: "B", home: "加拿大", away: "波黑", homeGoals: 1, awayGoals: 1, note: "东道主首战被逼平" },
+  { date: "06-12", group: "D", home: "美国", away: "巴拉圭", homeGoals: 4, awayGoals: 1, note: "美国进攻效率高" },
+  { date: "06-13", group: "C", home: "巴西", away: "摩洛哥", homeGoals: 1, awayGoals: 1, note: "强队失分样本" },
+  { date: "06-14", group: "E", home: "德国", away: "库拉索", homeGoals: 7, awayGoals: 1, note: "大比分拉高进球环境" },
+  { date: "06-16", group: "I", home: "法国", away: "塞内加尔", homeGoals: 3, awayGoals: 1, note: "热门队正常兑现" },
+  { date: "06-16", group: "I", home: "挪威", away: "伊拉克", homeGoals: 4, awayGoals: 1, note: "热门锋线兑现" },
+  { date: "06-16", group: "J", home: "阿根廷", away: "阿尔及利亚", homeGoals: 3, awayGoals: 0, note: "热门零封" },
+  { date: "06-16", group: "J", home: "奥地利", away: "约旦", homeGoals: 3, awayGoals: 1, note: "热门胜出" }
+];
+
 const $ = (selector) => document.querySelector(selector);
 const homeSelect = $("#home-team");
 const awaySelect = $("#away-team");
@@ -100,6 +111,24 @@ function logarithmicPool(model, market, weight) {
   return { homeWin: values[0] / total, draw: values[1] / total, awayWin: values[2] / total };
 }
 
+function normalizeOutcome(homeWin, draw, awayWin) {
+  const total = homeWin + draw + awayWin || 1;
+  return { homeWin: homeWin / total, draw: draw / total, awayWin: awayWin / total };
+}
+
+function eloOutcome(difference) {
+  const share = 1 / (1 + Math.pow(10, -difference / 410));
+  const draw = clamp(0.30 - Math.abs(difference) / 2600, 0.18, 0.31);
+  return normalizeOutcome((1 - draw) * share, draw, (1 - draw) * (1 - share));
+}
+
+function strengthProxyOutcome(result) {
+  const tempo = clamp((result.homeLambda + result.awayLambda - 2.2) / 1.4, 0, 1);
+  const draw = clamp(0.31 - tempo * 0.08 - Math.abs(result.difference) / 3200, 0.17, 0.32);
+  const share = 1 / (1 + Math.exp(-result.difference / 185));
+  return normalizeOutcome((1 - draw) * share, draw, (1 - draw) * (1 - share));
+}
+
 function calculateModel() {
   const home = teamById(homeSelect.value);
   const away = teamById(awaySelect.value);
@@ -124,6 +153,10 @@ function calculateModel() {
   let homeWin = 0;
   let draw = 0;
   let awayWin = 0;
+  let poissonHomeWin = 0;
+  let poissonDraw = 0;
+  let poissonAwayWin = 0;
+  let poissonTotal = 0;
   let over25 = 0;
   let btts = 0;
   let matrixTotal = 0;
@@ -131,8 +164,12 @@ function calculateModel() {
 
   for (let h = 0; h <= 9; h += 1) {
     for (let a = 0; a <= 9; a += 1) {
-      const probability = poisson(h, homeLambda) * poisson(a, awayLambda) *
-        dixonColesTau(h, a, homeLambda, awayLambda, rho);
+      const rawProbability = poisson(h, homeLambda) * poisson(a, awayLambda);
+      const probability = rawProbability * dixonColesTau(h, a, homeLambda, awayLambda, rho);
+      poissonTotal += rawProbability;
+      if (h > a) poissonHomeWin += rawProbability;
+      else if (h === a) poissonDraw += rawProbability;
+      else poissonAwayWin += rawProbability;
       matrixTotal += probability;
       if (h > a) homeWin += probability;
       else if (h === a) draw += probability;
@@ -149,6 +186,11 @@ function calculateModel() {
     draw: draw / matrixTotal,
     awayWin: awayWin / matrixTotal
   };
+  const poissonBase = {
+    homeWin: poissonHomeWin / poissonTotal,
+    draw: poissonDraw / poissonTotal,
+    awayWin: poissonAwayWin / poissonTotal
+  };
   scores.sort((a, b) => b.probability - a.probability);
 
   let effectiveMarketWeight = 0;
@@ -163,9 +205,72 @@ function calculateModel() {
   return {
     home, away, venue, difference, homeAdjusted, awayAdjusted, homeLambda, awayLambda,
     homeWin: blended.homeWin, draw: blended.draw, awayWin: blended.awayWin,
-    base, effectiveMarketWeight, over25: over25 / matrixTotal, btts: btts / matrixTotal,
+    base, poissonBase, effectiveMarketWeight, over25: over25 / matrixTotal, btts: btts / matrixTotal,
     scores: scores.slice(0, 4), scoreMatrix: scores,
     homeForm, awayForm, homeAvailability, awayAvailability
+  };
+}
+
+function outcomeLeader(model, home, away) {
+  const values = [
+    { key: "homeWin", label: home.name, value: model.homeWin },
+    { key: "draw", label: "平局", value: model.draw },
+    { key: "awayWin", label: away.name, value: model.awayWin }
+  ];
+  return values.sort((a, b) => b.value - a.value)[0];
+}
+
+function buildModelStack(result) {
+  const elo = eloOutcome(result.difference);
+  const strength = strengthProxyOutcome(result);
+  const rows = [
+    { name: "Dixon–Coles 比分", tag: "低比分修正", model: result.base },
+    { name: "原始泊松进球", tag: "不修正相关性", model: result.poissonBase },
+    { name: "纯 Elo 胜率", tag: "只看实力差", model: elo },
+    { name: "强弱代理模型", tag: "状态 + 阵容", model: strength }
+  ];
+  if (marketData?.probabilities) {
+    rows.push({
+      name: "Polymarket 市场",
+      tag: `成交量 ${formatMoney(marketData.volume)}`,
+      model: {
+        homeWin: marketData.probabilities.home,
+        draw: marketData.probabilities.draw,
+        awayWin: marketData.probabilities.away
+      }
+    });
+  }
+  rows.push({ name: "最终集成", tag: "页面主输出", model: { homeWin: result.homeWin, draw: result.draw, awayWin: result.awayWin }, final: true });
+  return rows;
+}
+
+function calculateUpsetRadar(result, stack) {
+  const favoriteIsHome = result.homeWin >= result.awayWin;
+  const favorite = favoriteIsHome ? result.home : result.away;
+  const underdog = favoriteIsHome ? result.away : result.home;
+  const underdogWin = favoriteIsHome ? result.awayWin : result.homeWin;
+  const favoriteWin = favoriteIsHome ? result.homeWin : result.awayWin;
+  const market = marketData?.probabilities;
+  const marketFavoriteWin = market ? (favoriteIsHome ? market.home : market.away) : null;
+  const modelDisagreement = Math.max(...stack.slice(0, -1).map((row) => {
+    const leader = outcomeLeader(row.model, result.home, result.away);
+    return leader.label === favorite.name ? 0 : 1;
+  }));
+  const marketDivergence = marketFavoriteWin == null ? 0 : Math.abs(favoriteWin - marketFavoriteWin);
+  const score = clamp(underdogWin + result.draw * 0.45 + modelDisagreement * 0.08 + marketDivergence * 0.5, 0, 0.72);
+  const label = score >= 0.42 ? "高冷门窗口" : score >= 0.30 ? "中等冷门窗口" : "低冷门窗口";
+  const text = `${favorite.name}仍是更可能方向，但${underdog.name}直接赢球概率为${percent(underdogWin)}，平局概率为${percent(result.draw)}。爆冷评分越高，越适合重点查看让球盘和临场阵容。`;
+  return {
+    label,
+    text,
+    score,
+    factors: [
+      `${underdog.name}赢球 ${percent(underdogWin)}`,
+      `平局 ${percent(result.draw)}`,
+      `热门胜率 ${percent(favoriteWin)}`,
+      market ? `盘口分歧 ${Math.round(marketDivergence * 100)}%` : "暂无盘口分歧",
+      modelDisagreement ? "存在模型反向" : "模型方向较一致"
+    ]
   };
 }
 
@@ -261,6 +366,57 @@ function renderOdds(result) {
   $("#under-prob").textContent = percent(total.under);
 }
 
+function renderModelLab(result) {
+  const stack = buildModelStack(result);
+  const leaders = stack.slice(0, -1).map((row) => outcomeLeader(row.model, result.home, result.away).label);
+  const topLeader = outcomeLeader({ homeWin: result.homeWin, draw: result.draw, awayWin: result.awayWin }, result.home, result.away);
+  const agreement = leaders.filter((label) => label === topLeader.label).length;
+  $("#consensus-label").textContent = `${agreement}/${leaders.length} 模型支持 ${topLeader.label}`;
+  $("#model-stack").replaceChildren(...stack.map((row) => {
+    const leader = outcomeLeader(row.model, result.home, result.away);
+    const item = document.createElement("div");
+    item.className = row.final ? "model-row model-row-final" : "model-row";
+    item.innerHTML = `
+      <div><strong>${row.name}</strong><small>${row.tag}</small></div>
+      <span>${percent(row.model.homeWin)}</span>
+      <span>${percent(row.model.draw)}</span>
+      <span>${percent(row.model.awayWin)}</span>
+      <em>${leader.label}</em>
+    `;
+    return item;
+  }));
+
+  const upset = calculateUpsetRadar(result, stack);
+  $("#upset-score").textContent = `${Math.round(upset.score * 100)}%`;
+  $("#upset-text").textContent = `${upset.label}：${upset.text}`;
+  $("#upset-factors").replaceChildren(...upset.factors.map((text) => {
+    const tag = document.createElement("span");
+    tag.textContent = text;
+    return tag;
+  }));
+}
+
+function renderPastMatches() {
+  const games = previousMatches.length;
+  const goals = previousMatches.reduce((sum, match) => sum + match.homeGoals + match.awayGoals, 0);
+  const favoritesDropped = previousMatches.filter((match) => /失分|逼平/.test(match.note)).length;
+  $("#past-games").textContent = games;
+  $("#past-goals").textContent = goals;
+  $("#past-avg-goals").textContent = (goals / games).toFixed(2);
+  $("#past-upsets").textContent = favoritesDropped;
+  $("#past-updated").textContent = `更新至 ${previousMatches.at(-1).date}`;
+  $("#past-match-list").replaceChildren(...previousMatches.map((match) => {
+    const row = document.createElement("div");
+    row.className = "past-match";
+    row.innerHTML = `
+      <span>${match.date} · ${match.group}组</span>
+      <strong>${match.home} ${match.homeGoals}-${match.awayGoals} ${match.away}</strong>
+      <small>${match.note}</small>
+    `;
+    return row;
+  }));
+}
+
 function setTeamVisuals(prefix, team) {
   const flag = $(`#${prefix}-flag`);
   flag.src = flagUrl(team);
@@ -309,6 +465,7 @@ function render() {
   $("#blend-draw").textContent = percent(result.draw);
   $("#blend-away").textContent = percent(result.awayWin);
   renderOdds(result);
+  renderModelLab(result);
 
   const highest = Math.max(result.homeWin, result.draw, result.awayWin);
   $("#confidence-label").textContent = highest >= 0.66 ? "较高置信度" : highest >= 0.48 ? "中等置信度" : "低置信度";
@@ -446,6 +603,7 @@ $("#theme-switch").addEventListener("click", () => {
 
 applyBoardTheme();
 updateOutputs();
+renderPastMatches();
 render();
 $("#handicap-line").value = String(pickMainHandicap(calculateModel()));
 render();

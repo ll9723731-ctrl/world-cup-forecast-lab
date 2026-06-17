@@ -468,6 +468,60 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .final-row strong { padding-left: 8px; color: white; }
 .final-row span:last-child { padding-right: 8px; }
 
+.model-lab {
+  margin-top: 20px;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--blue);
+  background: var(--white);
+}
+.model-stack { margin-top: 16px; border: 1px solid var(--line); }
+.model-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) repeat(3, minmax(58px, .35fr)) minmax(74px, .45fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  font-size: 13px;
+}
+.model-row:last-child { border-bottom: 0; }
+.model-row div { text-align: left; }
+.model-row strong, .model-row small { display: block; }
+.model-row strong { font-size: 12px; }
+.model-row small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.model-row span { font-variant-numeric: tabular-nums; font-weight: 750; }
+.model-row em {
+  justify-self: end;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: var(--green);
+  background: var(--green-soft);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+.model-row-final { color: white; background: var(--navy); }
+.model-row-final small { color: rgba(255,255,255,.62); }
+.model-row-final em { color: #111; background: var(--yellow); }
+.upset-card {
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255,82,104,.35);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255,82,104,.13), rgba(250,204,21,.08));
+}
+.upset-card > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.upset-card span { color: var(--muted); font-size: 12px; font-weight: 800; }
+.upset-card strong { color: var(--red); font-size: 34px; }
+.upset-card p { margin: 10px 0 14px; color: var(--ink); font-size: 13px; line-height: 1.7; }
+
 .odds-center {
   margin-top: 20px;
   padding: 22px 24px;
@@ -621,6 +675,40 @@ footer {
 }
 .review-grid strong { display: block; color: var(--yellow); }
 .review-grid span { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.past-summary {
+  margin-top: 22px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+.past-metrics {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.past-metrics article {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+.past-metrics span { display: block; color: var(--muted); font-size: 11px; }
+.past-metrics strong { display: block; margin-top: 8px; color: var(--yellow); font-size: 26px; }
+.past-match-list {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.past-match {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.past-match span, .past-match small { display: block; color: var(--muted); font-size: 10px; }
+.past-match strong { display: block; margin: 6px 0; font-size: 13px; }
 
 @media (max-width: 980px) {
   .board-layout { grid-template-columns: 1fr; }
@@ -640,6 +728,7 @@ footer {
   .odds-grid { grid-template-columns: 1fr 1fr; }
   .zonal-stats { grid-template-columns: repeat(2, 1fr); }
   .review-grid { grid-template-columns: 1fr; }
+  .past-metrics, .past-match-list { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 640px) {
@@ -669,14 +758,16 @@ footer {
   .news-item { grid-template-columns: 1fr; gap: 5px; }
   .result-heading { align-items: flex-start; gap: 12px; }
   .result-badges { flex-direction: column; align-items: flex-end; }
-  .model-comparison { padding: 18px 12px; overflow-x: auto; }
-  .comparison-head, .comparison-row { min-width: 430px; }
+  .model-comparison, .model-lab { padding: 18px 12px; overflow-x: auto; }
+  .comparison-head, .comparison-row, .model-row { min-width: 430px; }
   .odds-center { padding: 18px 12px; }
   .odds-grid { grid-template-columns: 1fr; }
   .pitch-lines { display: none; }
   .board-sidebar { padding: 16px; }
   .board-nav { overflow-x: auto; grid-template-columns: repeat(5, minmax(64px, 1fr)); }
   .zonal-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .past-summary { padding: 18px 12px; }
+  .past-metrics, .past-match-list { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 420px) {
