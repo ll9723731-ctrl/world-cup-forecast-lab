@@ -4,6 +4,9 @@ node_modules/
 preview*.png
 public-site.png
 odds-preview.png
+board-preview.png
+board-mobile.png
+netlify-check.png
 npm-debug.log*
 
 # Local Netlify folder

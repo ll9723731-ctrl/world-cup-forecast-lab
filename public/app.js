@@ -19,6 +19,25 @@ const awaySelect = $("#away-team");
 let marketData = null;
 let liveRequestId = 0;
 
+function initialBoardTheme() {
+  try {
+    const stored = localStorage.getItem("forecastx-theme");
+    return stored === "light" ? "light" : "dark";
+  } catch (_error) {
+    return "dark";
+  }
+}
+
+function applyBoardTheme(theme = initialBoardTheme()) {
+  document.documentElement.dataset.boardTheme = theme;
+  const switcher = $("#theme-switch");
+  if (switcher) {
+    switcher.querySelector("strong").textContent = theme === "dark" ? "深色赛场" : "浅色看板";
+    switcher.querySelector("em").textContent = theme === "dark" ? "点击切换浅色" : "点击切换深色";
+  }
+  try { localStorage.setItem("forecastx-theme", theme); } catch (_error) {}
+}
+
 function flagUrl(team) {
   return `https://flagcdn.com/w160/${team.flagCode}.png`;
 }
@@ -420,7 +439,12 @@ $("#market-weight").addEventListener("input", () => { $("#market-weight-value").
 $("#handicap-line").addEventListener("change", render);
 $("#total-line").addEventListener("change", render);
 $("#predict-button").addEventListener("click", refreshLiveData);
+$("#theme-switch").addEventListener("click", () => {
+  const next = document.documentElement.dataset.boardTheme === "dark" ? "light" : "dark";
+  applyBoardTheme(next);
+});
 
+applyBoardTheme();
 updateOutputs();
 render();
 $("#handicap-line").value = String(pickMainHandicap(calculateModel()));

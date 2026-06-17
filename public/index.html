@@ -8,24 +8,55 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="世界杯预测实验室首页">
-      <span class="brand-ball" aria-hidden="true">⚽</span>
-      <span>
-        <strong>世界杯预测实验室</strong>
-        <small>ELO · DIXON-COLES · MARKET</small>
-      </span>
-    </a>
-    <div class="model-status"><span class="status-dot"></span>实时混合模型</div>
-  </header>
+  <div class="board-layout">
+    <aside class="board-sidebar">
+      <a class="board-brand" href="#data-board" aria-label="世界杯资料看板首页">
+        <span class="board-kicker">OPEN DATA BOARD</span>
+        <strong>ForecastX</strong>
+        <small>公开资料、盘口和模型对照放在同一张桌上。</small>
+      </a>
+      <nav class="board-nav" aria-label="页面导航">
+        <a href="#data-board" class="active">资料</a>
+        <a href="#prediction-board">预测</a>
+        <a href="#odds-board">盘口</a>
+        <a href="#teams-board">队伍</a>
+        <a href="#review-board">复盘</a>
+      </nav>
+      <button class="theme-switch" id="theme-switch" type="button">
+        <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
+        <span><strong>深色赛场</strong><em>点击切换浅色</em></span>
+      </button>
+      <div class="sidebar-note">
+        仅用于资料整理、模型观点对照和赛后复盘，不承诺命中率。
+      </div>
+    </aside>
+
+    <div class="board-main">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="世界杯预测实验室首页">
+          <span class="brand-ball" aria-hidden="true">⚽</span>
+          <span>
+            <strong>世界杯预测实验室</strong>
+            <small>ELO · DIXON-COLES · MARKET</small>
+          </span>
+        </a>
+        <div class="model-status"><span class="status-dot"></span>实时混合模型</div>
+      </header>
 
   <main>
-    <section class="match-workbench" aria-labelledby="page-title">
+    <section class="match-workbench" id="data-board" aria-labelledby="page-title">
       <div class="pitch-lines" aria-hidden="true"></div>
       <div class="intro">
         <p class="eyebrow">WORLD CUP 2026 · 48 TEAMS</p>
         <h1 id="page-title">比赛预测中心</h1>
         <p>比较球队实力、阵容和市场共识，给出90分钟胜平负与比分概率。</p>
+      </div>
+
+      <div class="zonal-stats">
+        <article><strong>48</strong><span>参赛队伍</span></article>
+        <article><strong>12</strong><span>小组分区</span></article>
+        <article><strong>3</strong><span>模型层</span></article>
+        <article><strong>3m</strong><span>盘口刷新</span></article>
       </div>
 
       <div class="team-picker">
@@ -96,7 +127,7 @@
       </div>
     </section>
 
-    <section class="results" aria-live="polite">
+    <section class="results" id="prediction-board" aria-live="polite">
       <div class="result-heading">
         <div><p class="eyebrow">HYBRID MODEL OUTPUT</p><h2>预测结果</h2></div>
         <div class="result-badges">
@@ -134,7 +165,7 @@
         <div class="comparison-row final-row"><strong>混合模型</strong><span id="blend-home">--</span><span id="blend-draw">--</span><span id="blend-away">--</span></div>
       </div>
 
-      <div class="odds-center">
+      <div class="odds-center" id="odds-board">
         <div class="section-title">
           <div>
             <h3>盘口与公平赔率</h3>
@@ -242,7 +273,7 @@
       </div>
     </section>
 
-    <section class="methodology">
+    <section class="methodology" id="teams-board">
       <div><p class="eyebrow">MODEL ARCHITECTURE</p><h2>混合预测方法</h2></div>
       <div class="method-steps">
         <article><strong>01</strong><h3>动态 Elo</h3><p>以国家队长期实力为先验，再加入场地、近期状态与阵容修正。</p></article>
@@ -251,9 +282,23 @@
       </div>
       <p class="disclaimer">模型表达的是概率，不会预知红牌、临场伤病或偶然事件。市场价格可能受流动性、价差与情绪影响；新闻标题也需要人工核实。</p>
     </section>
+
+    <section class="review-board" id="review-board">
+      <div>
+        <p class="eyebrow">POST MATCH REVIEW</p>
+        <h2>复盘区</h2>
+      </div>
+      <div class="review-grid">
+        <article><strong>方向</strong><span>记录胜平负是否命中，后续可接入自动赛果。</span></article>
+        <article><strong>比分</strong><span>记录最可能比分、一球内接近和偏差原因。</span></article>
+        <article><strong>盘口</strong><span>保留赛前盘口概率，便于赛后观察市场分歧。</span></article>
+      </div>
+    </section>
   </main>
 
   <footer><span>World Cup Forecast Lab</span><span>模型版本 0.3 · 48支球队</span></footer>
+    </div>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>
